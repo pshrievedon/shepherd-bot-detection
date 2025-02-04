@@ -31,3 +31,16 @@ Shepherd is a browser extension designed to detect bots in online spaces, starti
 1. Clone this repository:
    ```bash
    git clone https://github.com/pshrievedon/shepherd-bot-detection.git
+   ```
+
+## Backend Deployment with Replit
+
+The backend for Shepherd is hosted on Replit. To set up and run the backend:
+
+1. Open the Replit project [here](https://<your-replit-url>.replit.dev).
+2. The backend is an Express.js server that provides API endpoints for bot analysis.
+3. The main endpoint `/api/chat` accepts profile data via a POST request and returns bot analysis results.
+
+To integrate the Replit backend with the extension:
+
+- Update the API URL in your frontend files (e.g., `contentScript.js`) to the Replit URL.
