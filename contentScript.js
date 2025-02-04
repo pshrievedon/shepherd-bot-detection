@@ -1,7 +1,7 @@
 // contentScript.js
 console.log("Reddit Bot Detection content script loaded");
 
-const apiUrl = "https://26dd-174-44-213-197.ngrok-free.app/api/chat";
+const apiUrl = "https://4dff-174-44-213-197.ngrok-free.app/api/chat";
 /////////////////////////////
 // UI Helpers: Loading Indicator
 /////////////////////////////
