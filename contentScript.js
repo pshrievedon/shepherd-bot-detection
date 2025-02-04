@@ -1,5 +1,8 @@
 console.log("Reddit Bot Detection content script loaded");
 
+const apiUrl =
+  "https://d7b8b372-7e2f-44d6-8b57-4629ecbc2928-00-2jv98073st6zi.kirk.replit.dev/api/chat";
+
 function createResultDiv(result) {
   const div = document.createElement("div");
   div.id = "reddit-bot-detection-result";
@@ -227,21 +230,18 @@ function init() {
   if (profileData.username) {
     console.log("Valid profile data found, proceeding with analysis");
 
-    fetch(
-      "https://d7b8b372-7e2f-44d6-8b57-4629ecbc2928-00-2jv98073st6zi.kirk.replit.dev/api/chat",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: profileData,
-        }),
-      }
-    )
+    fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: profileData,
+      }),
+    })
       .then((response) => response.json())
       .then((data) => {
-        var res = parseJsonString(data.response);
+        const res = parseJsonString(data.response);
         console.log("Success:", res);
         const resultDiv = createResultDiv(res);
         document.body.insertBefore(resultDiv, document.body.firstChild);
