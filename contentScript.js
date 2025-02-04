@@ -1,14 +1,13 @@
 // contentScript.js
 console.log("Reddit Bot Detection content script loaded");
 
-// ***** UPDATE THIS URL with your actual Replit deployment URL *****
-const apiUrl = "https://your-app-name.repl.co/api/chat";
+const apiUrl = "https://c3c7-174-44-213-197.ngrok-free.app";
 
 /////////////////////////////
 // UI Helpers: Loading Indicator
 /////////////////////////////
 function showLoadingIndicator() {
-  // Create a full-width banner at the top of the page
+  removeLoadingIndicator(); // remove any existing indicator
   const loadingDiv = document.createElement("div");
   loadingDiv.id = "shepherd-loading";
   loadingDiv.style.cssText = `
@@ -31,7 +30,9 @@ function showLoadingIndicator() {
 
 function removeLoadingIndicator() {
   const loadingDiv = document.getElementById("shepherd-loading");
-  if (loadingDiv) loadingDiv.remove();
+  if (loadingDiv && loadingDiv.parentNode) {
+    loadingDiv.parentNode.removeChild(loadingDiv);
+  }
 }
 
 /////////////////////////////
@@ -48,7 +49,7 @@ function createResultDiv(result) {
     background-color: #fff;
     color: #333;
     padding: 20px;
-    z-index: 10000;
+    z-index: 10001;
     font-family: Arial, sans-serif;
     font-size: 16px;
     border: 2px solid #ccc;
@@ -57,7 +58,6 @@ function createResultDiv(result) {
     max-width: 90%;
   `;
 
-  // Choose a header background color based on bot likelihood.
   let headerBg;
   if (result.bot_likelihood <= 30) {
     headerBg = "#C8E6C9"; // light green
@@ -127,13 +127,13 @@ function extractProfileData() {
     recentComments: [],
   };
 
-  // Username extraction
+  // Try several selectors for the username.
   const usernameSelectors = [
     'h1[class*="ProfileCard__username"]',
     'h1[class*="Header__username"]',
     'h1[class*="ProfileCard"] span',
     'h1[class*="Header"] span',
-    "h1", // Fallback
+    "h1",
   ];
   for (let selector of usernameSelectors) {
     const element = document.querySelector(selector);
@@ -143,7 +143,7 @@ function extractProfileData() {
     }
   }
 
-  // Karma extraction
+  // Extract karma values.
   const karmaSelectors = [
     'span[id*="karma"]',
     'span[data-testid="karma-number"]',
@@ -164,7 +164,7 @@ function extractProfileData() {
     }
   }
 
-  // Account age extraction
+  // Extract account age.
   const ageSelectors = [
     'time[data-testid="cake-day"]',
     'span[id*="cake-day"]',
@@ -179,7 +179,7 @@ function extractProfileData() {
     }
   }
 
-  // Description extraction
+  // Extract profile description.
   const descriptionSelectors = [
     'p[data-testid="profile-description"]',
     'div[class*="ProfileCard__description"]',
@@ -193,7 +193,7 @@ function extractProfileData() {
     }
   }
 
-  // Recent comments extraction
+  // Extract recent comments.
   const commentSelectors = [
     "shreddit-comment",
     'article[data-testid="post-container"]',
@@ -206,7 +206,7 @@ function extractProfileData() {
     if (commentElements.length > 0) {
       commentElements.forEach((comment, index) => {
         if (index < 5) {
-          // Limit to 5 comments
+          // limit to 5 comments
           const commentText = comment.textContent.trim();
           const commentDate = comment.closest("article")
             ? comment
@@ -247,7 +247,6 @@ function extractProfileData() {
 function init() {
   console.log("Initializing analysis...");
   showLoadingIndicator();
-
   const profileData = extractProfileData();
 
   if (profileData.username) {

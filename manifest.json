@@ -6,12 +6,12 @@
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
+  // "content_scripts": [
+  //  {
       "matches": ["*://*.reddit.com/*"],
       "js": ["contentScript.js"]
-    }
-  ],
+//    }
+  //],
   "action": {
     "default_popup": "popup.html"
   },
