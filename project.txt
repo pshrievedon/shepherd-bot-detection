@@ -1,0 +1,124 @@
+Build a Google Chrome extension called "Reddit Bot Detection System" that analyzes Reddit profiles for potential bot behavior. The extension should pull profile data from the URL (e.g., https://www.reddit.com/user/FrankWanders/comments/), send the data to an API for bot likelihood analysis, and display the results in a popup designed like the attached image.
+
+Steps for the Extension:
+Manifest File (manifest.json):
+
+Set up a Chrome extension manifest using manifest_version: 3 with the required permissions:
+"activeTab", "storage", "tabs".
+Ensure "content_scripts" matches Reddit URLs like https://www.reddit.com/user/*.
+Use service_worker in the background to handle page transitions and profile URL changes.
+Content Script for Reddit Profile Analysis (contentScript.js):
+
+Detect when a Reddit profile page is loaded, such as https://www.reddit.com/user/FrankWanders/comments/.
+Trigger the analysis when the user navigates to a Reddit profile page:
+Extract relevant profile metadata (username, account age, post history, comments) from the HTML structure.
+Fetch profile-specific data like:
+Username: from <h1 class="text-24 font-bold">.
+Profile age and post frequency from the user overview and posts/comments tabs.
+Example HTML extraction code snippet for Reddit profile:
+javascript
+Copy code
+const username = document.querySelector('h1').textContent.trim();
+const accountAge = document.querySelector('.account-age').textContent.trim(); // Hypothetical selector for demonstration
+// You can use similar selectors to extract post/comment frequency.
+API Integration for Bot Detection:
+
+After collecting the profile metadata, send it to an external API to calculate the bot likelihood. The API will evaluate the data and return a JSON response with scores for Content Analysis, Engagement with Other Users, and Profile Metadata.
+API Request Example:
+javascript
+Copy code
+const profileData = {
+  "username": username,
+  "account_age": accountAge, // Add additional metadata as required
+  "post_frequency": postFrequency, // Fetch the number of posts/comments if available
+};
+
+fetch('https://api.example.com/analyzeProfile', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(profileData)
+})
+.then(response => response.json())
+.then(data => {
+  chrome.runtime.sendMessage({ action: "displayAnalysis", result: data });
+})
+.catch(error => console.error('Error:', error));
+Popup UI (popup.html, popup.js):
+
+Style the popup to match the attached image with animated progress bars.
+The popup should display:
+Bot Likelihood Score: e.g., "57% chance of being a bot."
+Status Description: e.g., "This account is mildly suspicious."
+Progress Bars for:
+Content Analysis
+Engagement with Other Users
+Profile Metadata
+Add an animated loader (e.g., a spinning icon) that appears while the API is processing the data.
+Example HTML for Popup:
+
+html
+Copy code
+<div id="analysis-result">
+  <p><strong>This account has a <span id="bot-likelihood">57%</span> chance of being a bot.</strong></p>
+  <p>Based on our analysis, this account is <span id="status-description">mildly suspicious</span>. Proceed with caution.</p>
+  <div class="analysis-bar">
+    <p>Content Analysis</p>
+    <div class="bar"><div class="fill" id="content-bar"></div></div>
+  </div>
+  <div class="analysis-bar">
+    <p>Engagement with Other Users</p>
+    <div class="bar"><div class="fill" id="engagement-bar"></div></div>
+  </div>
+  <div class="analysis-bar">
+    <p>Profile Metadata</p>
+    <div class="bar"><div class="fill" id="profile-bar"></div></div>
+  </div>
+</div>
+JavaScript to Populate the Popup:
+
+javascript
+Copy code
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "displayAnalysis") {
+    document.getElementById('bot-likelihood').textContent = `${message.result.bot_likelihood}%`;
+    document.getElementById('status-description').textContent = message.result.status;
+    
+    // Animate the progress bars
+    document.getElementById('content-bar').style.width = `${message.result.analysis.content_analysis}%`;
+    document.getElementById('engagement-bar').style.width = `${message.result.analysis.engagement_with_users}%`;
+    document.getElementById('profile-bar').style.width = `${message.result.analysis.profile_metadata}%`;
+  }
+});
+Loader and Animation:
+
+While the API request is being processed, display a loading spinner in the popup with the text "Analyzing...".
+After receiving the data, the loader should disappear, and the bot likelihood and progress bars should animate to reflect the API results.
+CSS for Progress Bars and Loader:
+
+css
+Copy code
+.bar {
+  background-color: #e0e0e0;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  background-color: #ff6f61;
+  width: 0;
+  transition: width 2s ease;
+}
+#loader {
+  display: none;
+}
+#loading.active {
+  display: block;
+}
+Test and Debug:
+
+Test the extension on various Reddit profiles (e.g., https://www.reddit.com/user/FrankWanders/comments/) to ensure it accurately triggers the profile analysis, communicates with the API, and displays results correctly.
+Make sure the loader and progress bar animations function smoothly and that the API response populates the UI properly.
+Expected Outcome:
+A Chrome extension that analyzes Reddit profiles by gathering user metadata and content data, sending it to an API for bot detection, and displaying the bot likelihood in a popup styled with animated progress bars and a smooth loading experience.
+

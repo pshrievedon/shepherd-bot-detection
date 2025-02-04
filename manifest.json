@@ -1,0 +1,31 @@
+{
+  "manifest_version": 2,
+
+  "name": "Reddit Bot Detection",
+
+  "version": "1.0",
+
+  "description": "Detects potential bots on Reddit profiles.",
+
+  "permissions": ["activeTab"],
+
+  "host_permissions": [
+    "https://2f027155-55fc-4a70-b490-1c856eeebbe4-00-2s3rccliyc41x.kirk.replit.dev/"
+  ],
+
+  "action": {
+    "default_popup": "popup.html"
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["*://*.reddit.com/*"],
+
+      "js": ["contentScript.js"]
+    }
+  ]
+}
