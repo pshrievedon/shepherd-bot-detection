@@ -1,7 +1,7 @@
 // contentScript.js
 console.log("Reddit Bot Detection content script loaded");
 
-const apiUrl = "https://c3c7-174-44-213-197.ngrok-free.app/api/chat";
+const apiUrl = "https://26dd-174-44-213-197.ngrok-free.app/api/chat";
 /////////////////////////////
 // UI Helpers: Loading Indicator
 /////////////////////////////
@@ -57,39 +57,33 @@ function createResultDiv(result) {
     max-width: 90%;
   `;
 
-  let headerBg;
-  if (result.bot_likelihood <= 30) {
-    headerBg = "#C8E6C9"; // light green
-  } else if (result.bot_likelihood <= 50) {
-    headerBg = "#FFF9C4"; // light yellow
-  } else {
-    headerBg = "#FFCDD2"; // light red
-  }
+  // Set a threshold for the final bot likelihood.
+  const threshold = 75;
+  const mainHeadingText =
+    result.bot_likelihood < threshold
+      ? "It is unlikely this user is a bot"
+      : "This user is likely a bot";
 
-  const headerStyle = `
-    background-color: ${headerBg};
-    padding: 10px;
-    border-radius: 6px;
-    margin-bottom: 10px;
+  // Create a bold main heading.
+  const heading = document.createElement("h2");
+  heading.textContent = mainHeadingText;
+  heading.style.cssText = `
+    margin: 0 0 10px 0;
     text-align: center;
     font-weight: bold;
   `;
 
-  const contentHTML = `
-    <div style="${headerStyle}">
-      Bot Likelihood: ${result.bot_likelihood}%
-    </div>
-    <div style="margin-bottom: 10px;">
-      <p><strong>Status:</strong> ${result.status}</p>
-      <p><strong>Overall Assessment:</strong> ${result.status}</p>
-    </div>
-    <div>
-      <p><strong>Content Analysis (${result.analysis.content_analysis.score}%):</strong> ${result.analysis.content_analysis.description}</p>
-      <p><strong>Engagement (${result.analysis.engagement_with_users.score}%):</strong> ${result.analysis.engagement_with_users.description}</p>
-      <p><strong>Profile Metadata (${result.analysis.profile_metadata.score}%):</strong> ${result.analysis.profile_metadata.description}</p>
-    </div>
+  // Create the details section.
+  const details = document.createElement("div");
+  details.innerHTML = `
+    <p><strong>Bot Likelihood:</strong> ${result.bot_likelihood}%</p>
+    <p><strong>Status:</strong> ${result.status}</p>
+    <p><strong>Content Analysis:</strong> ${result.analysis.content_analysis.score}% – ${result.analysis.content_analysis.description}</p>
+    <p><strong>Engagement:</strong> ${result.analysis.engagement_with_users.score}% – ${result.analysis.engagement_with_users.description}</p>
+    <p><strong>Profile Metadata:</strong> ${result.analysis.profile_metadata.score}% – ${result.analysis.profile_metadata.description}</p>
   `;
 
+  // Create a close button.
   const closeButton = document.createElement("button");
   closeButton.textContent = "Close";
   closeButton.style.cssText = `
@@ -107,7 +101,9 @@ function createResultDiv(result) {
     div.remove();
   });
 
-  div.innerHTML = contentHTML;
+  // Append the heading, details, and close button.
+  div.appendChild(heading);
+  div.appendChild(details);
   div.appendChild(closeButton);
   return div;
 }
