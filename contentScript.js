@@ -1,76 +1,123 @@
+// contentScript.js
 console.log("Reddit Bot Detection content script loaded");
 
-const apiUrl =
-  "https://d7b8b372-7e2f-44d6-8b57-4629ecbc2928-00-2jv98073st6zi.kirk.replit.dev/api/chat";
+// ***** UPDATE THIS URL with your actual Replit deployment URL *****
+const apiUrl = "https://your-app-name.repl.co/api/chat";
 
+/////////////////////////////
+// UI Helpers: Loading Indicator
+/////////////////////////////
+function showLoadingIndicator() {
+  // Create a full-width banner at the top of the page
+  const loadingDiv = document.createElement("div");
+  loadingDiv.id = "shepherd-loading";
+  loadingDiv.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #2196F3;
+    color: white;
+    padding: 10px;
+    z-index: 10000;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    text-align: center;
+    border-bottom: 2px solid #1976D2;
+  `;
+  loadingDiv.textContent = "Analyzing... Please wait.";
+  document.body.insertBefore(loadingDiv, document.body.firstChild);
+}
+
+function removeLoadingIndicator() {
+  const loadingDiv = document.getElementById("shepherd-loading");
+  if (loadingDiv) loadingDiv.remove();
+}
+
+/////////////////////////////
+// UI Helper: Create Result Card
+/////////////////////////////
 function createResultDiv(result) {
   const div = document.createElement("div");
-  div.id = "reddit-bot-detection-result";
+  div.id = "shepherd-result";
+  div.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #fff;
+    color: #333;
+    padding: 20px;
+    z-index: 10000;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    max-width: 90%;
+  `;
 
-  // Determine background color based on bot likelihood
-  let backgroundColor;
+  // Choose a header background color based on bot likelihood.
+  let headerBg;
   if (result.bot_likelihood <= 30) {
-    backgroundColor = "#4CAF50"; // Green
+    headerBg = "#C8E6C9"; // light green
   } else if (result.bot_likelihood <= 50) {
-    backgroundColor = "#FFEB3B"; // Yellow
+    headerBg = "#FFF9C4"; // light yellow
   } else {
-    backgroundColor = "#F44336"; // Red
+    headerBg = "#FFCDD2"; // light red
   }
 
-  div.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background-color: ${backgroundColor};
-        color: ${result.bot_likelihood <= 50 ? "black" : "white"};
-        padding: 10px;
-        z-index: 9999;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        line-height: 1.4;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    `;
+  const headerStyle = `
+    background-color: ${headerBg};
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: bold;
+  `;
 
-  const content = `
-        <div style="display: flex; justify-content: space-between; align-items: start;">
-            <div style="flex: 1;">
-                <p style="font-weight: bold; margin: 0 0 10px 0;">Bot Likelihood: ${result.bot_likelihood}%</p>
-                <p style="margin: 0 0 10px 0;"><strong>Status:</strong> ${result.status}</p>
-                <p style="margin: 0 0 10px 0;"><strong>Overall Assessment:</strong> ${result}</p>
-            </div>
-            <div style="flex: 1;">
-                <p style="margin: 0 0 5px 0;"><strong>Content Analysis (${result.analysis.content_analysis.score}%):</strong> ${result.analysis.content_analysis.description}</p>
-                <p style="margin: 0 0 5px 0;"><strong>Engagement (${result.analysis.engagement_with_users.score}%):</strong> ${result.analysis.engagement_with_users.description}</p>
-                <p style="margin: 0 0 5px 0;"><strong>Profile Metadata (${result.analysis.profile_metadata.score}%):</strong> ${result.analysis.profile_metadata.description}</p>
-            </div>
-        </div>
-    `;
+  const contentHTML = `
+    <div style="${headerStyle}">
+      Bot Likelihood: ${result.bot_likelihood}%
+    </div>
+    <div style="margin-bottom: 10px;">
+      <p><strong>Status:</strong> ${result.status}</p>
+      <p><strong>Overall Assessment:</strong> ${result.status}</p>
+    </div>
+    <div>
+      <p><strong>Content Analysis (${result.analysis.content_analysis.score}%):</strong> ${result.analysis.content_analysis.description}</p>
+      <p><strong>Engagement (${result.analysis.engagement_with_users.score}%):</strong> ${result.analysis.engagement_with_users.description}</p>
+      <p><strong>Profile Metadata (${result.analysis.profile_metadata.score}%):</strong> ${result.analysis.profile_metadata.description}</p>
+    </div>
+  `;
 
   const closeButton = document.createElement("button");
-  closeButton.textContent = "X";
+  closeButton.textContent = "Close";
   closeButton.style.cssText = `
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        background: none;
-        border: none;
-        color: ${result.bot_likelihood <= 50 ? "black" : "white"};
-        font-size: 16px;
-        cursor: pointer;
-    `;
-  closeButton.onclick = () => div.remove();
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+  `;
+  closeButton.addEventListener("click", () => {
+    div.remove();
+  });
 
-  div.innerHTML = content;
+  div.innerHTML = contentHTML;
   div.appendChild(closeButton);
-
   return div;
 }
 
-// Extract profile data logic (unchanged)
+/////////////////////////////
+// Profile Data Extraction
+/////////////////////////////
 function extractProfileData() {
-  console.log("Attempting to extract profile data");
-
+  console.log("Extracting profile data...");
   const profileData = {
     username: "",
     accountAge: "",
@@ -80,32 +127,28 @@ function extractProfileData() {
     recentComments: [],
   };
 
-  // Username selectors (keep existing strategy)
+  // Username extraction
   const usernameSelectors = [
     'h1[class*="ProfileCard__username"]',
     'h1[class*="Header__username"]',
     'h1[class*="ProfileCard"] span',
     'h1[class*="Header"] span',
-    "h1", // Fallback to any h1 tag
+    "h1", // Fallback
   ];
-
   for (let selector of usernameSelectors) {
     const element = document.querySelector(selector);
-    if (element) {
+    if (element && element.textContent) {
       profileData.username = element.textContent.trim();
-      console.log(`Username found with selector: ${selector}`);
-      console.log("Username extracted:", profileData.username);
       break;
     }
   }
 
-  // Karma selectors
+  // Karma extraction
   const karmaSelectors = [
     'span[id*="karma"]',
     'span[data-testid="karma-number"]',
     'div[class*="ProfileCard__karma"]',
   ];
-
   for (let selector of karmaSelectors) {
     const elements = document.querySelectorAll(selector);
     if (elements.length >= 2) {
@@ -117,88 +160,68 @@ function extractProfileData() {
         elements[1].textContent.replace(/,/g, ""),
         10
       );
-      console.log(
-        "Karma extracted:",
-        profileData.postKarma,
-        profileData.commentKarma
-      );
       break;
     }
   }
 
-  // Account age selectors
+  // Account age extraction
   const ageSelectors = [
     'time[data-testid="cake-day"]',
     'span[id*="cake-day"]',
     'span[class*="ProfileCard__age"]',
     'div[data-testid="account-age"]',
   ];
-
   for (let selector of ageSelectors) {
     const element = document.querySelector(selector);
-    if (element) {
+    if (element && element.textContent) {
       profileData.accountAge = element.textContent.trim();
-      console.log("Account age extracted:", profileData.accountAge);
       break;
     }
   }
 
-  // Description selectors
+  // Description extraction
   const descriptionSelectors = [
     'p[data-testid="profile-description"]',
     'div[class*="ProfileCard__description"]',
     'div[class*="UserDescription"]',
   ];
-
   for (let selector of descriptionSelectors) {
     const element = document.querySelector(selector);
-    if (element) {
+    if (element && element.textContent) {
       profileData.description = element.textContent.trim();
-      console.log("Description extracted:", profileData.description);
       break;
     }
   }
 
-  console.log("Attempting to extract recent comments");
-  profileData.recentComments = [];
-
-  // New comment selectors based on the provided HTML
+  // Recent comments extraction
   const commentSelectors = [
     "shreddit-comment",
     'article[data-testid="post-container"]',
     'div[data-testid="comment"]',
     'div[class*="Comment__"]',
-    "div.md", // This selector targets the comment content in the provided HTML
+    "div.md",
   ];
-
   for (let selector of commentSelectors) {
-    console.log(`Trying selector: ${selector}`);
     const commentElements = document.querySelectorAll(selector);
-    console.log(
-      `Found ${commentElements.length} elements with selector ${selector}`
-    );
-
     if (commentElements.length > 0) {
       commentElements.forEach((comment, index) => {
         if (index < 5) {
-          // Limit to 5 recent comments
+          // Limit to 5 comments
           const commentText = comment.textContent.trim();
-          const commentDate = comment
-            .closest("article")
-            ?.querySelector("faceplate-timeago time")
-            ?.getAttribute("datetime");
-          const commentLink = comment
-            .closest("article")
-            ?.querySelector(
-              'a[data-click-id="body"], a[data-click-id="timestamp"]'
-            )
-            ?.getAttribute("href");
-
-          console.log(`Comment ${index + 1}:`);
-          console.log("Text:", commentText);
-          console.log("Date:", commentDate);
-          console.log("Link:", commentLink);
-
+          const commentDate = comment.closest("article")
+            ? comment
+                .closest("article")
+                .querySelector("faceplate-timeago time")
+                ?.getAttribute("datetime")
+            : null;
+          const commentLink = comment.closest("article")
+            ? comment
+                .closest("article")
+                .querySelector(
+                  'a[data-click-id="body"], a[data-click-id="timestamp"]'
+                )
+                ?.getAttribute("href")
+            : null;
           if (commentText) {
             profileData.recentComments.push({
               text: commentText,
@@ -210,93 +233,71 @@ function extractProfileData() {
           }
         }
       });
-      console.log("Recent comments extracted:", profileData.recentComments);
       break;
     }
   }
 
-  if (profileData.recentComments.length === 0) {
-    console.log("No comments found with any selector");
-  }
-
-  console.log("Full profile data:", profileData);
+  console.log("Profile Data:", profileData);
   return profileData;
 }
 
-// Initialize the content script
+/////////////////////////////
+// Main Initialization
+/////////////////////////////
 function init() {
-  console.log("Initializing content script");
-  const profileData = extractProfileData();
-  if (profileData.username) {
-    console.log("Valid profile data found, proceeding with analysis");
+  console.log("Initializing analysis...");
+  showLoadingIndicator();
 
+  const profileData = extractProfileData();
+
+  if (profileData.username) {
     fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: profileData,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: profileData }),
     })
       .then((response) => response.json())
-      .then((data) => {
-        const res = parseJsonString(data.response);
-        console.log("Success:", res);
-        const resultDiv = createResultDiv(res);
-        document.body.insertBefore(resultDiv, document.body.firstChild);
+      .then((result) => {
+        console.log("Analysis result:", result);
+        removeLoadingIndicator();
+        const resultDiv = createResultDiv(result);
+        document.body.appendChild(resultDiv);
       })
       .catch((error) => {
-        console.error("Error:", error);
+        console.error("Error during fetch:", error);
+        removeLoadingIndicator();
         const errorResult = {
           bot_likelihood: 0,
           status: "Error: " + error.message,
           analysis: {
-            content_analysis: 0,
-            engagement_with_users: 0,
-            profile_metadata: 0,
+            content_analysis: { score: 0, description: "N/A" },
+            engagement_with_users: { score: 0, description: "N/A" },
+            profile_metadata: { score: 0, description: "N/A" },
           },
         };
         const resultDiv = createResultDiv(errorResult);
-        document.body.insertBefore(resultDiv, document.body.firstChild);
+        document.body.appendChild(resultDiv);
       });
   } else {
-    console.log("No valid profile data found");
+    removeLoadingIndicator();
     const noDataResult = {
       bot_likelihood: 0,
       status: "Unable to extract profile data",
       analysis: {
-        content_analysis: 0,
-        engagement_with_users: 0,
-        profile_metadata: 0,
+        content_analysis: { score: 0, description: "N/A" },
+        engagement_with_users: { score: 0, description: "N/A" },
+        profile_metadata: { score: 0, description: "N/A" },
       },
     };
     const resultDiv = createResultDiv(noDataResult);
-    document.body.insertBefore(resultDiv, document.body.firstChild);
+    document.body.appendChild(resultDiv);
   }
 }
 
-// Run the script when the page is fully loaded
 if (document.readyState === "loading") {
-  console.log("Document still loading, adding DOMContentLoaded listener");
   document.addEventListener("DOMContentLoaded", init);
 } else {
-  console.log("Document already loaded, running init immediately");
   init();
 }
 
-console.log("Content script setup complete");
-
-// Function to clean and parse the JSON
-function parseJsonString(markdownString) {
-  // Remove the markdown formatting
-  const cleanedString = markdownString.replace(/```json|```|\[|\]/g, "").trim();
-  // Parse the cleaned JSON string
-  try {
-    const parsedJson = JSON.parse(cleanedString);
-    console.log(parsedJson);
-    return parsedJson; // return the parsed object if needed
-  } catch (error) {
-    console.error("Error parsing JSON:", error);
-  }
-}
+console.log("Content script execution complete");

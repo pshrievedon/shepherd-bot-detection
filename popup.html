@@ -1,18 +1,35 @@
-<div id="loader">Loading...</div>
-
-<div id="analysis-result" style="display: none;">
-    <p><strong>This account has a <span id="bot-likelihood">0%</span> chance of being a bot.</strong></p>
-    <p>Based on our analysis, this account is <span id="status-description">unknown</span>. Proceed with caution.</p>
-    <div class="analysis-bar">
-        <p>Content Analysis</p>
-        <div class="bar"><div class="fill" id="content-bar"></div></div>
-    </div>
-    <div class="analysis-bar">
-        <p>Engagement with Other Users</p>
-        <div class="bar"><div class="fill" id="engagement-bar"></div></div>
-    </div>
-    <div class="analysis-bar">
-        <p>Profile Metadata</p>
-        <div class="bar"><div class="fill" id="profile-bar"></div></div>
-    </div>
-</div>
+<!-- popup.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Shepherd</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        width: 300px;
+        padding: 10px;
+      }
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        background-color: #2196f3;
+        color: white;
+        border-radius: 4px;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Shepherd</h1>
+    <p>Reddit Bot Detection Tool</p>
+    <button id="analyze">Analyze Current Page</button>
+    <div id="result"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>
